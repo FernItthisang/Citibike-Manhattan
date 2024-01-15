@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<title>Citibike</title>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.4/lottie.min.js"
+    crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style.css" />
+
+</head>
+
+<body>
+    <section id="intro">
+        <div class="intro-content">
+            <div id="header">
+            <h1>The Citibike Manhattan Exploration</h1>
+        </div>
+            <h4>Discover how Citibike is used across Manhattan's diverse landscapes.</h4>
+            <div id="view">
+            <p>Select your view</p>
+            </div>
+            <nav>
+                <ul>
+                    <li><a class="nav-button" href="page2.html">View by Type</a></li>
+                    <li><a class="nav-button" href="page1.html">View by Age</a></li>
+                    <li><a class="nav-button" href="index.html">View by Height</a></li>
+                </ul>
+            </nav>
+            <div id="animation">
+            <div id="lottie-animation"></div>
+            </div>
+            <div id="scroll">
+                <h5>Scroll to explore</h5>
+            </div>
+        </div>
+    </section>
+
+
+
+
+    <div id="map-container">
+        <div id="map" class="sticky-map"></div>
+    </div>
+   
+    <main id="project-wrapper">
+        <section id="scrolly">
+            <article>
+                <div class="step" data-step="0">
+                    <h3>The usage of Citibike in Manhattan</h3>
+                    <h4>Citibike is widely regarded as one of the primary public transportation choices that a
+                        significant number of New Yorkers rely on for their daily commutes. Its convenience and
+                        availability have made it a popular and practical mode of transportation, especially for short
+                        trips within the city.</h4>
+                    <p>Base on data between January and October 2023</p>
+                </div>
+                <div class="step" data-step="1">
+                    <div class="chart-container">
+                        <h3>"How many types of buildings are there in Manhattan?"</h3>
+                        <div id="donutChartBuildingClass"></div>
+                    </div>
+                </div>
+                <div class="step" data-step="2">
+                    <h3>"Where are the station of citibike in Manhattan?"</h3>
+                    <h4>There are 1,915 citibike stations in New York City in September 2023.</h4>
+                    <div id="station-count"></div>
+                </div>
+                <div class="step" data-step="3">
+                    <h3>"What is the behavior of Citibike users?"</h3>
+                    <h4>Most users use the citibike in downtown where most buildings are Commercial buildings with 1-10
+                        floors and built in 1900s.</h4>
+                    <h5>Number of used bicycle of each types</h5>
+                    <div id="bike-info">
+                        <div class="bike-item">
+                            <img src="bicycle_1f6b2.png" alt="Classic Bike" id="classic-bike-icon">
+                            <span id="classic-count">Classic Bikes: 175510</span>
+                        </div>
+                        <div class="bike-item">
+                            <img src="battery_1f50b.png" alt="Electric Bike" id="electric-bike-icon">
+                            <span id="electric-count">Electric Bikes: 16320</span>
+                        </div>
+                    </div>
+                    <h5>Number of used bicycle of each user types</h5>
+                    <div id="member-info">
+                        <div class="member-item">
+                            <img src="admission-tickets_1f39f-fe0f.png" alt="Casual" id="casual-icon">
+                            <span id="casual-count">Casual Users: 49095</span>
+                        </div>
+                        <div class="member-item">
+                            <img src="spiral-calendar_1f5d3-fe0f.png" alt="Member" id="member-icon">
+                            <span id="member-count">Member Users: 142735</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="step" data-step="4">
+                    <h3>"How is access to Citibike in different zones?" </h3>
+                    <h4>Access to Citibike services, including docking stations and amenities, differs by area, influencing the convenience and efficiency of the system for city commuters.</h4>
+                    <p>Select your zone</p>
+                    <div id="filter-buttons">
+                        <button class="filter-button" data-layer="All">All</button>
+                        <button class="filter-button" data-layer="High Rise">High Rise</button>
+                        <button class="filter-button" data-layer="Residential">Residential</button>
+                        <button class="filter-button" data-layer="Commercial">Commercial</button>
+                        <button class="filter-button" data-layer="Education">Educational</button>
+                    </div>
+                </div>
+            </article>
+        </section>
+        
+    </main>
+    </body>
+    
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="scrollama.min.js"></script>
+    <script type="module" src="app.js"></script>
+    <script>
+
+        // Using d3 for convenience
+        var main = d3.select("main");
+        var scrolly = main.select("#scrolly");
+        var steps = scrolly.selectAll(".step");
+
+
+        // Initialize the scrollama
+        var scroller = scrollama();
+
+        // Resize function to set step heights
+        function handleResize() {
+            var stepH = Math.floor(window.innerHeight * 0.75);
+            steps.style("height", stepH + "px");
+            scroller.resize();
+        }
+
+
+
+        // Setup the Scrollama instance, pass callback functions
+        scroller.setup({
+            step: '.step',
+            offset: 0.5,
+            order: true, // Scrollama will trigger the steps in order
+            once: false // Allow steps to be triggered multiple times
+
+        }).onStepEnter(handleStepEnter);
+
+        // Scrollama event handler
+        function handleStepEnter(response) {
+            steps.classed("is-active", false);
+            d3.select(response.element).classed("is-active", true);
+
+            // Define all possible layers to manage visibility
+            var allLayers = [
+                'building-layer-Residential', 'building-layer-Commercial', 'building-layer-High Rise', 'building-layer-Education',
+                'citibike-stations-layer', 'clusters'];
+
+            // Hide all layers initially
+            allLayers.forEach(function (layer) {
+                map.setLayoutProperty(layer, 'visibility', 'none');
+            });
+
+            // Show layers based on the current step
+            var currentStep = response.element.getAttribute('data-step');
+            switch (currentStep) {
+                case '1':
+                    ['building-layer-Education', 'building-layer-Residential', 'building-layer-Commercial', 'building-layer-High Rise'].forEach(function (layer) {
+                        map.setLayoutProperty(layer, 'visibility', 'visible');
+                    });
+                    break;
+                case '2':
+                    map.setLayoutProperty('citibike-stations-layer', 'visibility', 'visible');
+                    break;
+                case '3':
+                    ['clusters'].forEach(function (layer) {
+                        map.setLayoutProperty(layer, 'visibility', 'visible');
+                    });
+                    break;
+                case '4':
+                    ['citibike-stations-layer','building-layer-Education', 'building-layer-Residential', 'building-layer-Commercial', 'building-layer-High Rise'].forEach(function (layer) {
+                        map.setLayoutProperty(layer, 'visibility', 'visible');
+                    });
+                    break;
+            }
+        }
+
+        // Resize event listener
+        window.addEventListener('resize', handleResize);
+
+        // Load the map and then initialize the scrollytelling
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZmVybjI1Ny0iLCJhIjoiY2xwcmM4d2ptMDdsdTJybnRmdHozNWNsbiJ9.fhn5xAgJrdyAm2kfxQVUcg';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/fern257-/clp6jpxva00wa01nwa77z41a9',
+            center: [-74.073580, 40.788440],
+            zoom: 10.95,
+            projection: 'mercator'
+        });
+
+        map.on('load', function () {
+            console.log("Map loaded. Existing layers:", map.getStyle().layers);
+
+            var allDataLayers = ['citibike-stations-layer','building-layer-Residential', 'building-layer-Commercial', 'building-layer-High Rise', 'building-layer-Education',  'building-age-layer-1900-1999', 'building-age-layer-2000-2009', 'building-age-layer-2010-23', 'building-height-layer-1-10', 'building-height-layer-11-20', 'building-height-layer-21-30', 'building-height-layer-31-40', 'building-height-layer-41-50', 'building-height-layer-51-Infinity'];
+
+            allDataLayers.forEach(function (layer) {
+                if (map.getLayer(layer)) {
+                    console.log("Hiding layer:", layer);
+                    map.setLayoutProperty(layer, 'visibility', 'none');
+                } else {
+                    console.error("Layer not found:", layer);
+                }
+            });
+
+            // Show the initial step's layers (step 0)
+            var initialLayers = ['building-layer-Residential', 'building-layer-Commercial', 'building-layer-High Rise', 'building-layer-Education', 'clusters'];
+            initialLayers.forEach(function (layer) {
+                map.setLayoutProperty(layer, 'visibility', 'visible');
+            });
+
+            var filterButtons = document.querySelectorAll('.filter-button');
+
+            filterButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var selectedLayer = button.getAttribute('data-layer');
+
+                    if (selectedLayer === 'All') {
+                        // แสดงทุกประเภทตึก
+                        map.setLayoutProperty('building-layer-Residential', 'visibility', 'visible');
+                        map.setLayoutProperty('building-layer-Commercial', 'visibility', 'visible');
+                        map.setLayoutProperty('building-layer-High Rise', 'visibility', 'visible');
+                        map.setLayoutProperty('building-layer-Education', 'visibility', 'visible');
+                    } else {
+                        // ซ่อนทุกประเภทตึก
+                        map.setLayoutProperty('building-layer-Residential', 'visibility', 'none');
+                        map.setLayoutProperty('building-layer-Commercial', 'visibility', 'none');
+                        map.setLayoutProperty('building-layer-High Rise', 'visibility', 'none');
+                        map.setLayoutProperty('building-layer-Education', 'visibility', 'none');
+
+                        // แสดงประเภทตึกที่ถูกเลือก
+                        map.setLayoutProperty('building-layer-' + selectedLayer, 'visibility', 'visible');
+                    }
+                });
+            });
+            // Add source for Citibike stations
+            map.addSource('citibike-stations', {
+                type: 'vector',
+                url: 'mapbox://fern257-.acyyzi5a'
+            });
+
+            map.addLayer({
+                id: 'citibike-stations-layer',
+                type: 'circle',
+                source: 'citibike-stations',
+                'source-layer': 'citibikesmanhattan_data-03hyrh',
+                paint: {
+                    'circle-color': '#E44C10',
+                    'circle-radius': 2,
+                    'circle-opacity': 1
+                }
+            });
+            // Add source for buildings
+            map.addSource('buildings', {
+                type: 'vector',
+                url: 'mapbox://fern257-.dm6sg1ga'
+            });
+
+            // Create layers for buildings by type
+            var bldgClasses = ['Residential', 'Commercial', 'High Rise', 'Education', 'Unknown'];
+            var colors = ["#1b4793", "#ef3c23", "#2178ae", "#fac92c", "#cfe5cc", "#ed8e83"];
+            bldgClasses.forEach(function (classType, index) {
+                map.addLayer({
+                    id: 'building-layer-' + classType,
+                    type: 'circle',
+                    source: 'buildings',
+                    'source-layer': 'use-1720if',
+                    filter: ['==', ['get', 'bldgclass'], classType],
+                    paint: {
+                        'circle-color': colors[index],
+                        'circle-opacity': 0.5,
+                        'circle-radius': 2
+                    }
+                });
+            });
+
+
+
+           
+
+            map.addSource('manhattan-source', {
+                type: 'geojson',
+                data: 'manhattan.geojson' // Specify the path to the GeoJSON file of Manhattan
+            });
+
+            // Add layer for Manhattan
+            map.addLayer({
+                id: 'manhattan-layer',
+                type: 'line',
+                source: 'manhattan-source',
+                paint: {
+                    'line-color': 'grey', // Color of the Manhattan border
+                    'line-width': 1 // Width of the border line
+                }
+            });
+
+            // Add source for Citibikeride
+            map.addSource('citibikeride', {
+                type: 'geojson',
+                data: 'citibikeride.geojson',
+                cluster: true,
+                clusterMaxZoom: 11,
+                clusterRadius: 30
+            });
+
+            // Add layer for clusters
+            map.addLayer({
+                id: 'clusters',
+                type: 'circle',
+                source: 'citibikeride',
+                filter: ['has', 'point_count'],
+                paint: {
+                    'circle-color': '#f15a42',
+                    'circle-radius': [
+                        'step',
+                        ['get', 'point_count'],
+                        20,
+                        100, 30,
+                        750, 40
+                    ],
+                    'circle-opacity': 0.75
+                }
+            });
+        });
+        document.addEventListener("DOMContentLoaded", function () {
+            var navButtons = document.querySelectorAll(".nav-button");
+
+            navButtons.forEach(function (button) {
+                button.addEventListener("click", function () {
+                    // ลบคลาส 'selected' ออกจากปุ่มทั้งหมด
+                    navButtons.forEach(function (btn) {
+                        btn.classList.remove("selected");
+                    });
+
+                    // เพิ่มคลาส 'selected' ให้กับปุ่มที่ถูกคลิก
+                    this.classList.add("selected");
+                });
+            });
+        });
+      
+    </script>
+</html>
